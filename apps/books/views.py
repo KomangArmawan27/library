@@ -1,6 +1,6 @@
 import django_filters
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, permissions, status, filters
+from rest_framework import generics, viewsets, permissions, status, filters
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,24 +12,33 @@ from datetime import datetime
 class BookFilter(django_filters.FilterSet):
     title = django_filters.CharFilter(lookup_expr="icontains")
     author = django_filters.CharFilter(lookup_expr="icontains")
-    is_avaliable = django_filters.BooleanFilter()
+    is_available = django_filters.BooleanFilter(method="filter_available")  
+
+    def filter_available(self, queryset, name, value):
+        """Filter books based on availability"""
+        return queryset.filter(is_borrowed=not value) 
+
+    class Meta:
+        model = Book
+        fields = ["title", "author", "is_available"] 
 
 class BorrowHistoryFilter(django_filters.FilterSet):
     user = django_filters.CharFilter(field_name="user__username", lookup_expr="icontains")
-    book = django_filters.CharFilter(field_name="book__title", lookup_expr="icontains")
+    book = django_filters.CharFilter(field_name="book__ title", lookup_expr="icontains")
     returned = django_filters.BooleanFilter(field_name="returned_at", lookup_expr="isnull", exclude=True)
 
 class BorrowHistoryPagination(PageNumberPagination):
-    page_size = 10  
+    page_size = 25
     page_size_query_param = "limit"  
     max_page_size = 100
 
 class BookViewSet(viewsets.ModelViewSet):
-    queryset = Book.objects.all()
+    queryset = Book.objects.all().order_by("id")
     serializer_class = BookSerializer
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
     filterset_class = BookFilter
     ordering_fields = ["title", "author"]
+    search_fields = ["title", "author"]  
     pagination_class = BorrowHistoryPagination
 
     def get_permissions(self):
@@ -108,3 +117,17 @@ class BookViewSet(viewsets.ModelViewSet):
             }
             for h in filterset.qs
         ])
+
+class BorrowedBooksView(generics.ListAPIView):
+    serializer_class = BookSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        """Return only the books borrowed by the authenticated user"""
+        return Book.objects.filter(borrowed_by=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        if not queryset.exists():
+            return Response({"message": "You have not borrowed any books yet."}, status=200)
+        return super().list(request, *args, **kwargs)

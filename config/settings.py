@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'apps.users',
     'apps.books',
+    'apps.dashboard',
+    'corsheaders'
 ]
 
 REST_FRAMEWORK = {
@@ -55,7 +57,7 @@ REST_FRAMEWORK = {
     
     # pagination
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 10, 
+    "PAGE_SIZE": 25, 
 
     # filter
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
@@ -70,6 +72,7 @@ SIMPLE_JWT = {
 }
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -156,3 +159,15 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = "users.User"
+
+# Allow all origins (for development)
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Restrict it to frontend URL
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",  
+    "http://127.0.0.1:5173",
+]
+
+# Allow credentials (if using authentication)
+CORS_ALLOW_CREDENTIALS = True
