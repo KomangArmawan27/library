@@ -30,8 +30,8 @@ This is a full-stack Library Management System built with Django (backend) and V
 1. Clone the repository:
 
    ```sh
-   git clone https://github.com/your-repo/library-management.git
-   cd library-management
+   git clone https://github.com/KomangArmawan27/library.git
+   cd library
    ```
 
 2. Create a `.env` file for the backend (same level as `manage.py`):
